@@ -283,8 +283,18 @@ body, html {
     /* Kecilkan ukuran elemen di dalam modal */
     .modal-title { font-size: 16px; margin-bottom: 10px; line-height: 1.2; }
     .author-card { padding: 10px; margin-bottom: 12px; }
-    .panduan-item { padding: 10px; gap: 8px; flex-direction: column; }
-    .panduan-item i { font-size: 18px; margin-bottom: 2px; }
+    .panduan-item { 
+        padding: 10px; 
+        gap: 12px; 
+        flex-direction: row; /* INI KUNCINYA: Mengembalikan susunan jadi menyamping */
+        align-items: flex-start;
+    }
+    .panduan-item i { 
+        font-size: 18px; 
+        margin-bottom: 0; 
+        margin-top: 2px; /* Biar ikon sejajar dengan baris pertama teks */
+        flex-shrink: 0; /* Mencegah ikon jadi gepeng/mengecil karena layarnya sempit */
+    }
     .panduan-text { font-size: 12px; line-height: 1.3; }
     .btn-start { padding: 12px; font-size: 13px; margin-top: 5px; }
 
