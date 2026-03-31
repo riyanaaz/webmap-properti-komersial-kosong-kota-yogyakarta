@@ -251,59 +251,65 @@ body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahom
    RESPONSIVE DESIGN (UNTUK LAYAR HP & TABLET)
 ======================================================= */
 @media screen and (max-width: 768px) {
-    /* 1. Search Bar: Menjadi tumpuk ke bawah dan lebarnya 90% layar */
-    .search-panel { 
-        top: 10px; 
+    /* 1. Modal: Disesuaikan biar tidak nabrak poni atas dan bawah */
+    .modal-content { 
         width: 90%; 
+        padding: 15px; 
+        max-height: 75vh; /* Kurangi tinggi maksimal biar aman dari menu bawah HP */
+        overflow-y: auto; /* NYALAKAN KEMBALI agar tombol di bawah tetap bisa dijangkau */
+    }
+    
+    /* Bikin scrollbar tipis di dalam modal khusus HP */
+    .modal-content::-webkit-scrollbar { width: 4px; }
+    .modal-content::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 10px; }
+
+    /* Kecilkan ukuran elemen di dalam modal */
+    .modal-title { font-size: 16px; margin-bottom: 10px; line-height: 1.2; }
+    .author-card { padding: 10px; margin-bottom: 12px; }
+    .panduan-item { padding: 10px; gap: 8px; flex-direction: column; }
+    .panduan-item i { font-size: 18px; margin-bottom: 2px; }
+    .panduan-text { font-size: 12px; line-height: 1.3; }
+    .btn-start { padding: 12px; font-size: 13px; margin-top: 5px; }
+
+    /* 2. Search Bar: Disesuaikan dan cegah bug iPhone */
+    .search-panel { 
+        top: 15px; /* Tambah jarak atas biar gak nabrak jam/sinyal */
+        width: 92%; 
+        max-width: 350px; 
         flex-direction: column; 
-        padding: 12px; 
+        padding: 10px; 
         gap: 8px; 
         border-radius: 12px; 
     }
-    .search-box { width: 100%; box-sizing: border-box; }
+    .search-box { width: 100%; box-sizing: border-box; padding: 6px 10px; }
+    
+    /* PENTING DI iOS: Ukuran font input WAJIB 16px agar tidak auto-zoom! */
+    .search-box input { font-size: 16px; } 
+    .search-box i { font-size: 16px; }
     .divider { width: 100%; height: 1px; }
 
-    /* 2. Modal Panduan: Biar muat di layar HP yang pendek */
-    .modal-content { 
-        padding: 15px; 
-        width: 90%; 
-        max-height: 85vh; 
-        /* Di HP kita nyalakan scroll sedikit berjaga-jaga kalau layar HP-nya sangat kecil */
-        overflow-y: auto; 
-    }
-    .modal-title { font-size: 15px; margin-bottom: 8px; }
-    .panduan-item { flex-direction: column; gap: 5px; padding: 10px; }
-    .panduan-item i { font-size: 18px; margin-bottom: 4px; align-self: flex-start; }
+    /* Batasi tinggi dropdown agar tidak menabrak keyboard saat ngetik */
+    .custom-dropdown { max-height: 180px; }
 
-    /* 3. Legenda: Dikecilkan ukurannya agar tidak menutupi peta di HP */
-    .info.legend {
+    /* 3. Legenda & Tombol Panduan: Dibuat lebih kecil & posisinya aman */
+    .info.legend { 
         padding: 8px 10px; 
         border-radius: 8px;
-        margin-bottom: 15px;
+        margin-bottom: 25px; /* Naikkan sedikit dari tombol navigasi HP */
         margin-right: 10px;
     }
-    .legend h4 { font-size: 11px; margin-bottom: 5px; padding-bottom: 4px; }
-    .legend-item { font-size: 9px; margin-bottom: 4px; }
+    .legend h4 { font-size: 12px; margin-bottom: 5px; padding-bottom: 4px; }
+    .legend-item { font-size: 10px; margin-bottom: 4px; }
     .legend-icon-properti { width: 12px; height: 12px; font-size: 6px; }
-    .info.legend svg { width: 30px; }
 
-    /* 4. Tombol Bantuan: Disesuaikan posisinya */
     .btn-help { 
-        bottom: 20px; 
+        bottom: 25px; 
         left: 10px; 
-        padding: 8px 15px; 
+        padding: 8px 12px; 
         font-size: 12px; 
     }
 
-    /* 5. Pop-up Peta: Disesuaikan agar tidak luber keluar layar HP */
+    /* 4. Pop-up Peta */
     .popup-custom { width: 200px; }
-    .popup-img-container { height: 110px; }
-    .attribute-key, .attribute-value { font-size: 10px; }
-    
-    /* 6. Dropdown Hasil Pencarian */
-    .custom-dropdown { min-width: 100%; }
-    .dropdown-item { padding: 10px; font-size: 12px; }
-    
-    /* 7. Tombol Close Lightbox Foto */
-    .image-lightbox-close { top: 15px; right: 20px; font-size: 35px; }
+    .popup-img-container { height: 120px; }
 }
