@@ -47,6 +47,19 @@ body, html {
 .search-box input { border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #333; font-weight: 500; }
 .divider { width: 1px; height: 25px; background-color: #ddd; }
 
+/* Desain Tombol Reset (Silang) di Search Box */
+.clear-btn {
+    color: #aaa;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    display: none; /* Disembunyikan secara default saat kotak kosong */
+    transition: 0.2s ease;
+}
+.clear-btn:hover {
+    color: var(--primary-red);
+}
+
 /* custom dropdown hasil search biar rapi */
 .custom-dropdown {
     position: absolute;
