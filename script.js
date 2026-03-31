@@ -26,8 +26,13 @@ function closeLightbox() {
     }, 300);
 }
 
-// setup awal leaflet, set view ke koordinat tengah jogja
-const map = L.map('map').setView([-7.7956, 110.3695], 13);
+// setup awal leaflet, matikan zoom kiri atas, set view ke koordinat tengah jogja
+const map = L.map('map', {
+    zoomControl: false // Matikan zoom default di kiri atas
+}).setView([-7.7956, 110.3695], 13);
+
+// Pindahkan zoom control ke kanan bawah (agar aman tidak nabrak search bar di HP)
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 // pakai basemap dari google maps
 L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
