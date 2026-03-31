@@ -31,14 +31,14 @@ const map = L.map('map', {
     zoomControl: false 
 }).setView([-7.7956, 110.3695], 13);
 
-// Pindahkan zoom control ke kanan bawah (agar aman tidak nabrak search bar di HP)
+// Pindahkan zoom control ke kiri bawah (agar aman tidak nabrak search bar di HP & di atas tombol panduan)
 L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-// pakai basemap dari google maps
+// pakai basemap dari google maps & UPDATE CREDIT TITLE
 L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
     maxZoom: 20, 
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], 
-    attribution: '© Google Maps | Riyana Ajizah'
+    attribution: '© Google Maps | Riyana Ajizah - Teknik Geodesi UGM'
 }).addTo(map);
 
 let propertiLayer; 
