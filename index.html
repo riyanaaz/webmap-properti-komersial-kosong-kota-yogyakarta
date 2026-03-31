@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Map Properti Komersial Kosong Yogyakarta</title>
+    
+    <link rel="icon" type="image/png" href="image/LOGOUGM.png" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="modal-overlay" id="guideModal">
+        <div class="modal-content">
+            <h3 class="modal-title">Web Map Properti Komersial Kosong<br>Kota Yogyakarta</h3>
+            
+            <div class="author-card">
+                <div class="author-card-content">
+                    <div class="author-badge"><i class="fas fa-graduation-cap"></i> Project Skripsi</div>
+                    <h4 class="author-name">Riyana Ajizah</h4>
+                    <div class="author-details">
+                        <span><i class="fas fa-id-card"></i> NIM: 22/492759/TK/53944</span>
+                        <span><i class="fas fa-university"></i> Teknik Geodesi, Universitas Gadjah Mada</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panduan-header">Panduan Penggunaan Peta</div>
+            <div class="panduan-list">
+                
+                <div class="panduan-item" style="background-color: #fff8e1; border-color: #ffe082;">
+                    <i class="fas fa-lightbulb" style="color: #f57f17;"></i>
+                    <div class="panduan-text">
+                        <strong style="color: #e65100;">Catatan Penting Pencarian</strong>
+                        Daftar pencarian <b>hanya menampilkan jalan yang memiliki properti komersial kosong</b>. Jika suatu jalan tidak ditemukan, berarti tidak ada properti komersial kosong yang tercatat di jalan tersebut.
+                    </div>
+                </div>
+
+                <div class="panduan-item">
+                    <i class="fas fa-search-location"></i>
+                    <div class="panduan-text">
+                        <strong>Pencarian Cepat</strong>
+                        Ketik/pilih nama jalan atau ketik/pilih jenis properti di kotak pencarian untuk memfilter titik lokasi di peta secara instan.
+                    </div>
+                </div>
+                <div class="panduan-item">
+                    <i class="fas fa-filter"></i>
+                    <div class="panduan-text">
+                        <strong>Filter Terhubung (Smart Filter)</strong>
+                        Pilihan di kotak pencarian "Nama Jalan" akan otomatis menyesuaikan opsi di kotak pencarian "Jenis Properti" yang tersedia di jalan tersebut, begitu pula sebaliknya!
+                    </div>
+                </div>
+                <div class="panduan-item">
+                    <i class="fas fa-info-circle"></i>
+                    <div class="panduan-text">
+                        <strong>Informasi Detail & Foto</strong>
+                        Klik ikon bulat merah di peta untuk melihat spesifikasi lengkap bangunan dan klik foto di dalam pop-up untuk memperbesarnya.
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-start" onclick="closeModal()">Paham, Lanjutkan ke Peta!</button>
+        </div>
+    </div>
+
+    <div class="image-lightbox-overlay" id="lightboxOverlay" onclick="if(event.target === this) closeLightbox()">
+        <span class="image-lightbox-close" onclick="closeLightbox()">&times;</span>
+        <img class="image-lightbox-content" id="lightboxImage" onclick="closeLightbox()">
+    </div>
+
+    <div class="search-panel">
+        <div class="search-box">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="searchJalan" placeholder="Ketik/pilih nama jalan..." autocomplete="off">
+            <div id="dropdownJalan" class="custom-dropdown"></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="search-box">
+            <i class="fas fa-building"></i>
+            <input type="text" id="searchJenis" placeholder="Ketik/pilih jenis properti..." autocomplete="off">
+            <div id="dropdownJenis" class="custom-dropdown"></div>
+        </div>
+    </div>
+
+    <button class="btn-help" onclick="openModal()" title="Buka Profil & Panduan">
+        <i class="fas fa-question-circle"></i> Panduan
+    </button>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+// script buat buka-tutup modal panduan pas awal loading
+function closeModal() {
+    const modal = document.getElementById('guideModal');
+    modal.style.opacity = '0';
+    setTimeout(() => { modal.style.display = 'none'; modal.style.opacity = '1'; }, 300);
+}
+function openModal() {
+    const modal = document.getElementById('guideModal');
+    modal.style.display = 'flex';
+}
+
+// script biar foto di popup bisa dizoom kalau diklik
+function openLightbox(imageSrc) {
+    const overlay = document.getElementById('lightboxOverlay');
+    const img = document.getElementById('lightboxImage');
+    img.src = imageSrc;
+    overlay.classList.add('show-lightbox');
+}
+
+function closeLightbox() {
+    const overlay = document.getElementById('lightboxOverlay');
+    overlay.style.opacity = '0'; 
+    setTimeout(() => { 
+        overlay.classList.remove('show-lightbox'); 
+        overlay.style.opacity = ''; 
+    }, 300);
+}
+
+// setup awal leaflet, set view ke koordinat tengah jogja
+const map = L.map('map').setView([-7.7956, 110.3695], 13);
+
+// pakai basemap dari google maps
+L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    maxZoom: 20, 
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], 
+    attribution: '© Google Maps | Riyana Ajizah'
+}).addTo(map);
+
+let propertiLayer; 
+let allMarkers = []; // array ini buat nampung semua titik biar gampang difilter nanti
+
+// ngerapiin nama field dari atribut geojson biar enak dibaca di popup
+const aliasField = {
+    "awalkosong": "Bulan Kosong",
+    "thnkosong": "Tahun Kosong",
+    "id": "ID",
+    "nama jln": "Nama Jalan",
+    "nama_jln": "Nama Jalan",
+    "jenis jln": "Jenis Jalan",
+    "jenis_jln": "Jenis Jalan",
+    "jenisprope": "Jenis Properti",
+    "fungsisblm": "Fungsi Awal Properti",
+    "kondisifis": "Kondisi Fisik Properti",
+    "deketpusat": "Dekat Pusat",
+    "linksekit": "Lingkungan Sekitar",
+    "lingksekit": "Lingkungan Sekitar" 
+};
+
+async function loadMapData() {
+    try {
+        // panggil data batas administrasi (geojson)
+        const batasRes = await fetch('data/batas.geojson'); 
+        if (batasRes.ok) {
+            const batasGeoJSON = await batasRes.json();
+            L.geoJSON(batasGeoJSON, { style: { color: '#FFFFFF', weight: 6, opacity: 1, fillColor: 'none', fillOpacity: 0 } }).addTo(map);
+            L.geoJSON(batasGeoJSON, { style: { color: '#000000', weight: 3, opacity: 1, dashArray: '15, 6, 2, 6, 2, 6', lineCap: 'round', lineJoin: 'round', fillColor: 'none', fillOpacity: 0 } }).addTo(map);
+        }
+
+        // panggil data titik properti (geojson)
+        const propertiRes = await fetch('data/properti.geojson');
+        if (propertiRes.ok) {
+            const propertiGeoJSON = await propertiRes.json();
+            
+            propertiLayer = L.geoJSON(propertiGeoJSON, {
+                pointToLayer: function (feature, latlng) {
+                    // custom icon marker jadi bulet merah
+                    let iconProperti = L.divIcon({ className: 'marker-properti', html: '<i class="fas fa-store"></i>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
+                    return L.marker(latlng, { icon: iconProperti });
+                },
+                onEachFeature: function (feature, layer) {
+                    allMarkers.push(layer); // simpan ke array buat filter
+
+                    let props = feature.properties;
+                    let namaJalan = (props['Nama Jln'] || props.Nama_Jln || "-");
+                    let jenisProperti = (props.Jenisprope || "-"); 
+                    let namaFoto = props.foto || props.FOTO; 
+
+                    // build isi html buat popupnya
+                    let popupContent = `<div class="popup-custom">`;
+                    
+                    if (namaFoto) {
+                        popupContent += `<div class="popup-img-container"><img src="foto/${namaFoto}" class="popup-img" title="Klik untuk memperbesar foto" onclick="openLightbox(this.src)" onerror="this.parentElement.style.display='none';"></div>`;
+                    }
+                    
+                    popupContent += `<table style="width: 100%; border-collapse: collapse;">`;
+                    
+                    for (let key in props) {
+                        let lowerKey = key.toLowerCase();
+                        // tampilin semua atribut kecuali kolom foto dan nama (biar gak dobel)
+                        if (lowerKey !== 'foto' && lowerKey !== 'nama' && props[key] !== null && props[key] !== '') {
+                            let labelTampil = aliasField[lowerKey] || key;
+                            popupContent += `<tr style="border-bottom: 1px solid #eee;"><td class="attribute-key">${labelTampil}</td><td class="attribute-value">${props[key]}</td></tr>`;
+                        }
+                    }
+                    popupContent += `</table></div>`;
+                    
+                    layer.bindPopup(popupContent, {
+                        autoPanPaddingTopLeft: [20, 140], 
+                        autoPanPaddingBottomRight: [20, 20]
+                    });
+                    
+                    let titikTengah = layer.getLatLng ? layer.getLatLng() : layer.getBounds().getCenter();
+                    
+                    // nyimpen info spesifik tiap titik biar gampang diakses waktu user nge-filter di search bar
+                    layer.featureData = {
+                        jalanAsli: namaJalan,
+                        jenisAsli: jenisProperti,
+                        jalan: namaJalan.toLowerCase(),
+                        jenis: jenisProperti.toLowerCase(),
+                        titik: titikTengah
+                    };
+                }
+            }).addTo(map);
+
+            // zoom map biar ngepas ke semua titik properti
+            if (propertiLayer.getBounds().isValid()) {
+                map.fitBounds(propertiLayer.getBounds());
+            }
+
+            // jalanin fungsi buat dropdown kalau datanya udah selesai diload
+            setupDropdown('searchJalan', 'dropdownJalan', 'jalan', 'fa-road');
+            setupDropdown('searchJenis', 'dropdownJenis', 'jenis', 'fa-tag');
+        }
+    } catch (error) { 
+        console.error("Waduh, gagal load data geojson nih:", error); 
+    }
+}
+
+loadMapData();
+
+// nambahin box legenda
+const legend = L.control({ position: 'bottomright' });
+legend.onAdd = function (map) {
+    const div = L.DomUtil.create('div', 'info legend');
+    div.innerHTML = `
+        <h4>Legenda</h4>
+        <div class="legend-item"><div class="legend-icon-properti"><i class="fas fa-store"></i></div><span>Properti Komersial Kosong</span></div>
+        <div class="legend-item"><svg width="40" height="14" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px; flex-shrink: 0;"><line x1="0" y1="7" x2="40" y2="7" stroke="#FFFFFF" stroke-width="6" /><line x1="0" y1="7" x2="40" y2="7" stroke="#000000" stroke-width="3" stroke-dasharray="8, 4, 2, 4, 2, 4" stroke-linecap="round" /></svg><span>Batas Administrasi Kota Yogyakarta</span></div>
+    `;
+    return div;
+};
+legend.addTo(map);
+
+// script untuk filter titik di map berdasarkan inputan user
+const inputJalan = document.getElementById('searchJalan');
+const inputJenis = document.getElementById('searchJenis');
+
+function filterMap() {
+    const queryJalan = inputJalan.value.toLowerCase().trim();
+    const queryJenis = inputJenis.value.toLowerCase().trim();
+    
+    let visibleBounds = L.latLngBounds();
+    let hasVisibleMarkers = false;
+
+    allMarkers.forEach(marker => {
+        const data = marker.featureData;
+        const cocokJalan = (queryJalan === '' || data.jalan.includes(queryJalan));
+        const cocokJenis = (queryJenis === '' || data.jenis.includes(queryJenis));
+
+        // kalau cocok dua-duanya, tampilin titiknya. kalau enggak, hapus dari view
+        if (cocokJalan && cocokJenis) {
+            if (!map.hasLayer(marker)) map.addLayer(marker);
+            visibleBounds.extend(data.titik);
+            hasVisibleMarkers = true;
+        } else {
+            if (map.hasLayer(marker)) map.removeLayer(marker);
+        }
+    });
+
+    // auto zoom ke area titik-titik hasil pencarian
+    if (hasVisibleMarkers && (queryJalan !== '' || queryJenis !== '')) {
+        map.fitBounds(visibleBounds, { padding: [50, 50], maxZoom: 17, duration: 1.0 });
+    } else if (queryJalan === '' && queryJenis === '') {
+        // balikin zoom ke awal kalau inputan kosong semua
+        if (propertiLayer && propertiLayer.getBounds().isValid()) {
+            map.fitBounds(propertiLayer.getBounds(), { duration: 1.0 });
+        }
+    }
+}
+
+// fungsi buat nampilin list dropdown (cascading / saling nyambung)
+function setupDropdown(inputId, dropdownId, type, iconClass) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+
+    function renderList(filterText) {
+        dropdown.innerHTML = '';
+        const textLower = filterText.toLowerCase();
+
+        let currentDataArray = [];
+        
+        // kalau user nyari jalan, listnya nyesuain sama jenis properti yang udah dipilih sebelahnya
+        if (type === 'jalan') {
+            const queryJenis = inputJenis.value.toLowerCase().trim();
+            let availableJalan = new Set();
+            
+            allMarkers.forEach(marker => {
+                if (queryJenis === '' || marker.featureData.jenis.includes(queryJenis)) {
+                    availableJalan.add(marker.featureData.jalanAsli);
+                }
+            });
+            currentDataArray = Array.from(availableJalan).sort();
+            
+        } 
+        // sebaliknya, kalau milih jenis, nyesuain sama nama jalan yang udah diketik
+        else if (type === 'jenis') {
+            const queryJalan = inputJalan.value.toLowerCase().trim();
+            let availableJenis = new Set();
+            
+            allMarkers.forEach(marker => {
+                if (queryJalan === '' || marker.featureData.jalan.includes(queryJalan)) {
+                    availableJenis.add(marker.featureData.jenisAsli);
+                }
+            });
+            currentDataArray = Array.from(availableJenis).sort();
+        }
+
+        // saring lagi sesuai text yang diketik user
+        const filtered = currentDataArray.filter(item => item.toLowerCase().includes(textLower));
+        
+        if (filtered.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.innerHTML = `<i class="fas ${iconClass}"></i> <span class="dropdown-text">${item}</span>`;
+            
+            // pas listnya diklik, masukin valuenya ke input, tutup dropdown, terus jalanin filter
+            div.addEventListener('mousedown', function() { 
+                input.value = item;
+                dropdown.style.display = 'none';
+                filterMap(); 
+            });
+            
+            dropdown.appendChild(div);
+        });
+        
+        dropdown.style.display = 'flex';
+    }
+
+    input.addEventListener('input', () => {
+        renderList(input.value);
+        filterMap(); 
+    });
+
+    input.addEventListener('focus', () => {
+        renderList(input.value);
+    });
+    
+    input.addEventListener('blur', () => {
+        // dikasih delay dikit biar pas user klik listnya gak keburu ilang
+        setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+    });
+}
