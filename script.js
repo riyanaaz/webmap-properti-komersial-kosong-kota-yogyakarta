@@ -38,7 +38,7 @@ L.control.zoom({ position: 'bottomleft' }).addTo(map);
 L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
     maxZoom: 20, 
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], 
-    attribution: '© Google Maps | Riyana Ajizah - Teknik Geodesi UGM'
+    attribution: '© Google Maps | Riyana Ajizah - S1 Teknik Geodesi UGM'
 }).addTo(map);
 
 let propertiLayer; 
