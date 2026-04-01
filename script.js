@@ -153,7 +153,7 @@ async function loadMapData() {
 
             // jalanin fungsi buat dropdown kalau datanya udah selesai diload
             setupDropdown('searchJalan', 'dropdownJalan', 'jalan', 'fa-road');
-            setupDropdown('searchJenis', 'dropdownJenis', 'jenis', 'fa-tag');
+            setupDropdown('searchJenis', 'dropdownJenis', 'jenis', 'fa-store');
         }
     } catch (error) { 
         console.error("Waduh, gagal load data geojson nih:", error); 
