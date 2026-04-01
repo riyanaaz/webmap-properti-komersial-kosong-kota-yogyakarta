@@ -123,11 +123,11 @@ body, html {
 .attribute-value { font-size: 11px; color: #333; padding: 3px 0; text-align: right; }
 
 .marker-properti {
-    background-color: #ffffff; border: 2px solid var(--primary-red); border-radius: 50%; 
+    background-color: #ffffff; border: 1.5px solid var(--primary-red); border-radius: 50%; 
     color: var(--primary-red); display: flex; justify-content: center; align-items: center;
-    font-size: 9px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.2s ease;
+    font-size: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.25); transition: all 0.2s ease;
 }
-.marker-properti:hover { transform: scale(1.3); background-color: var(--primary-red); color: #ffffff; z-index: 1000 !important; }
+.marker-properti:hover { transform: scale(1.4); background-color: var(--primary-red); color: #ffffff; z-index: 1000 !important; }
 
 /* box legenda */
 .info.legend {
