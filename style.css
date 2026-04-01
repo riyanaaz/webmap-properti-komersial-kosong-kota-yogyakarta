@@ -218,6 +218,7 @@ body, html {
 
 .panduan-text { font-size: 12px; color: #444; line-height: 1.35; text-align: left; }
 .panduan-text strong, .panduan-text b { color: #222; font-size: 13px; display: inline; }
+.panduan-text strong:first-child, .panduan-text b:first-child { display: block; margin-bottom: 4px; }
 .warning-box .panduan-text strong { color: #e65100; }
 
 .btn-start {
@@ -284,6 +285,7 @@ body, html {
     
     .panduan-text { font-size: 10.5px; line-height: 1.25; }
     .panduan-text strong, .panduan-text b { font-size: 11px; }
+    .panduan-text strong:first-child, .panduan-text b:first-child { font-size: 12px; margin-bottom: 2px; }
 
     .btn-start { padding: 10px; font-size: 12px; margin-top: 0; }
 
