@@ -217,7 +217,7 @@ body, html {
 .icon-wrapper.warning-icon { background: #fff3e0; color: #f57f17; }
 
 .panduan-text { font-size: 12px; color: #444; line-height: 1.35; text-align: left; }
-.panduan-text strong, .panduan-text b { color: #222; font-size: 13px; display: block; margin-bottom: 2px; }
+.panduan-text strong, .panduan-text b { color: #222; font-size: 13px; display: inline; }
 .warning-box .panduan-text strong { color: #e65100; }
 
 .btn-start {
@@ -283,7 +283,7 @@ body, html {
     .icon-wrapper i { font-size: 12px; }
     
     .panduan-text { font-size: 10.5px; line-height: 1.25; }
-    .panduan-text strong, .panduan-text b { font-size: 11px; margin-bottom: 1px; }
+    .panduan-text strong, .panduan-text b { font-size: 11px; }
 
     .btn-start { padding: 10px; font-size: 12px; margin-top: 0; }
 
