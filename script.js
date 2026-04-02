@@ -31,7 +31,7 @@ const map = L.map('map', {
     zoomControl: false 
 }).setView([-7.7956, 110.3695], 13);
 
-// Pindahkan zoom control ke kiri bawah (agar aman tidak nabrak search bar di HP & di atas tombol panduan)
+// Pindahkan zoom control ke kiri bawah
 L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
 // pakai basemap dari google maps & UPDATE CREDIT TITLE
@@ -41,29 +41,19 @@ L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
     attribution: '© Google Maps | Riyana Ajizah - S1 Teknik Geodesi UGM'
 }).addTo(map);
 
+// VARIABEL GLOBAL PENTING
 let propertiLayer; 
-let allMarkers = []; // array ini buat nampung semua titik biar gampang difilter nanti
-let propertiLayer; 
-let allMarkers = [];
-let clusterGroup; // TAMBAHAN: Variabel penampung cluster
+let allMarkers = []; 
+let clusterGroup; // Variabel penampung cluster
 
 // Fungsi untuk mengubah ukuran icon saat di-zoom
 map.on('zoomend', function() {
     var zoom = map.getZoom();
-    
-    // Rumus skala: Anggap zoom 14 adalah ukuran normal (scale 1)
-    // Semakin zoom in, scale bertambah 0.4. Semakin zoom out, scale mengecil.
     var scale = 1 + ((zoom - 14) * 0.4); 
-    
-    // Batasi ukuran supaya tidak terlalu raksasa saat di-zoom maksimal, atau hilang saat zoom out
     if (scale < 0.6) scale = 0.6; 
     if (scale > 3.0) scale = 3.0; 
-    
-    // Kirim nilai skala ke CSS
     document.documentElement.style.setProperty('--icon-scale', scale);
 });
-
-// Panggil fungsi sekali saat peta pertama dimuat agar ukurannya langsung menyesuaikan
 map.fire('zoomend');
 
 // ngerapiin nama field dari atribut geojson biar enak dibaca di popup
@@ -98,10 +88,10 @@ async function loadMapData() {
         if (propertiRes.ok) {
             const propertiGeoJSON = await propertiRes.json();
             
-            // TAMBAHAN: Inisialisasi grup marker cluster
+            // SETUP MARKER CLUSTER (HEATMAP)
             clusterGroup = L.markerClusterGroup({
-                maxClusterRadius: 50, // Jangkauan radius pengelompokan
-                disableClusteringAtZoom: 17, // Pada zoom 17, cluster otomatis pecah jadi marker icon
+                maxClusterRadius: 50,
+                disableClusteringAtZoom: 17, // Otomatis pecah jadi icon kalau di-zoom in
                 spiderfyOnMaxZoom: true,
                 showCoverageOnHover: false,
                 zoomToBoundsOnClick: true,
@@ -109,11 +99,11 @@ async function loadMapData() {
                     let count = cluster.getChildCount();
                     let c = ' marker-cluster-';
                     if (count < 5) {
-                        c += 'small'; // < 5 titik warnanya kuning
+                        c += 'small';
                     } else if (count < 15) {
-                        c += 'medium'; // < 15 titik warnanya merah muda
+                        c += 'medium';
                     } else {
-                        c += 'large'; // >= 15 titik warnanya merah tua
+                        c += 'large';
                     }
                     return new L.DivIcon({ 
                         html: '<div><span>' + count + '</span></div>', 
@@ -137,10 +127,13 @@ async function loadMapData() {
                     let namaFoto = props.foto || props.FOTO; 
 
                     let popupContent = `<div class="popup-custom">`;
+                    
                     if (namaFoto) {
                         popupContent += `<div class="popup-img-container"><img src="foto/${namaFoto}" class="popup-img" title="Klik untuk memperbesar foto" onclick="openLightbox(this.src)" onerror="this.parentElement.style.display='none';"></div>`;
                     }
+                    
                     popupContent += `<table style="width: 100%; border-collapse: collapse;">`;
+                    
                     for (let key in props) {
                         let lowerKey = key.toLowerCase();
                         if (lowerKey !== 'foto' && lowerKey !== 'nama' && props[key] !== null && props[key] !== '') {
@@ -167,11 +160,11 @@ async function loadMapData() {
                 }
             });
 
-            // PERUBAHAN: Masukkan propertiLayer ke dalam cluster, lalu cluster ke map
+            // Masukkan layer properti ke cluster, lalu cluster ke peta
             clusterGroup.addLayer(propertiLayer);
             map.addLayer(clusterGroup);
 
-            // zoom map biar ngepas ke semua titik properti
+            // zoom map biar ngepas
             if (propertiLayer.getBounds().isValid()) {
                 map.fitBounds(propertiLayer.getBounds());
             }
@@ -207,13 +200,11 @@ const inputJenis = document.getElementById('searchJenis');
 const btnClearJalan = document.getElementById('clearJalan');
 const btnClearJenis = document.getElementById('clearJenis');
 
-// Fungsi untuk memunculkan/menyembunyikan tombol silang (reset)
 function updateClearButtons() {
     if(btnClearJalan) btnClearJalan.style.display = inputJalan.value.trim() !== '' ? 'block' : 'none';
     if(btnClearJenis) btnClearJenis.style.display = inputJenis.value.trim() !== '' ? 'block' : 'none';
 }
 
-// Aksi ketika tombol silang diklik (Reset Input & Peta)
 if (btnClearJalan) {
     btnClearJalan.addEventListener('click', () => {
         inputJalan.value = '';
@@ -236,7 +227,7 @@ function filterMap() {
     
     let visibleBounds = L.latLngBounds();
     let hasVisibleMarkers = false;
-    let filteredMarkers = []; // Tampung marker yang lolos filter
+    let filteredMarkers = []; 
 
     // Bersihkan semua titik di dalam cluster
     clusterGroup.clearLayers();
@@ -246,7 +237,6 @@ function filterMap() {
         const cocokJalan = (queryJalan === '' || data.jalan.includes(queryJalan));
         const cocokJenis = (queryJenis === '' || data.jenis.includes(queryJenis));
 
-        // Kalau cocok, masukkan ke array penampung
         if (cocokJalan && cocokJenis) {
             filteredMarkers.push(marker);
             visibleBounds.extend(data.titik);
@@ -254,10 +244,9 @@ function filterMap() {
         }
     });
 
-    // Masukkan kembali HANYA marker yang lolos filter ke dalam grup cluster
+    // Masukkan kembali HANYA marker yang lolos filter
     clusterGroup.addLayers(filteredMarkers);
 
-    // Auto zoom ke area titik-titik hasil pencarian
     if (hasVisibleMarkers && (queryJalan !== '' || queryJenis !== '')) {
         map.fitBounds(visibleBounds, { padding: [50, 50], maxZoom: 17, duration: 1.0 });
     } else if (queryJalan === '' && queryJenis === '') {
@@ -267,7 +256,7 @@ function filterMap() {
     }
 }
 
-// fungsi buat nampilin list dropdown (cascading / saling nyambung)
+// fungsi buat nampilin list dropdown
 function setupDropdown(inputId, dropdownId, type, iconClass) {
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
@@ -278,7 +267,6 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
 
         let currentDataArray = [];
         
-        // kalau user nyari jalan, listnya nyesuain sama jenis properti yang udah dipilih sebelahnya
         if (type === 'jalan') {
             const queryJenis = inputJenis.value.toLowerCase().trim();
             let availableJalan = new Set();
@@ -291,7 +279,6 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
             currentDataArray = Array.from(availableJalan).sort();
             
         } 
-        // sebaliknya, kalau milih jenis, nyesuain sama nama jalan yang udah diketik
         else if (type === 'jenis') {
             const queryJalan = inputJalan.value.toLowerCase().trim();
             let availableJenis = new Set();
@@ -304,7 +291,6 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
             currentDataArray = Array.from(availableJenis).sort();
         }
 
-        // saring lagi sesuai text yang diketik user
         const filtered = currentDataArray.filter(item => item.toLowerCase().includes(textLower));
         
         if (filtered.length === 0) {
@@ -317,11 +303,10 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
             div.className = 'dropdown-item';
             div.innerHTML = `<i class="fas ${iconClass}"></i> <span class="dropdown-text">${item}</span>`;
             
-            // pas listnya diklik, masukin valuenya ke input, tutup dropdown, terus jalanin filter
             div.addEventListener('mousedown', function() { 
                 input.value = item;
                 dropdown.style.display = 'none';
-                updateClearButtons(); // Menampilkan tombol silang jika ada isinya
+                updateClearButtons(); 
                 filterMap(); 
             });
             
@@ -333,7 +318,7 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
 
     input.addEventListener('input', () => {
         renderList(input.value);
-        updateClearButtons(); // Cek tombol silang setiap kali ngetik
+        updateClearButtons(); 
         filterMap(); 
     });
 
@@ -342,7 +327,6 @@ function setupDropdown(inputId, dropdownId, type, iconClass) {
     });
     
     input.addEventListener('blur', () => {
-        // dikasih delay dikit biar pas user klik listnya gak keburu ilang
         setTimeout(() => { dropdown.style.display = 'none'; }, 150);
     });
 }
