@@ -142,6 +142,7 @@ body, html {
 .wrapper-marker-aman {
     background: transparent !important;
     border: none !important;
+    pointer-events: auto !important;
 }
 
 /* Desain visual lingkaran merah ditaruh di dalam */
