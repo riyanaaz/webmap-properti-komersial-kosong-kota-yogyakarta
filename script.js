@@ -98,8 +98,8 @@ async function loadMapData() {
             propertiLayer = L.geoJSON(propertiGeoJSON, {
                 pointToLayer: function (feature, latlng) {
                     let iconProperti = L.divIcon({ 
-                        className: 'wrapper-marker-aman', // Pembungkus luar (dikendalikan Leaflet)
-                        html: '<div class="bulatan-merah-aman"><i class="fas fa-store"></i></div>', // Desain dalam
+                        className: 'wrapper-marker-aman leaflet-interactive',  /* ← TAMBAHKAN leaflet-interactive */
+                        html: '<div class="bulatan-merah-aman"><i class="fas fa-store"></i></div>',
                         iconSize: [24, 24], 
                         iconAnchor: [12, 12], 
                         popupAnchor: [0, -12] 
