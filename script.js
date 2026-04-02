@@ -97,13 +97,12 @@ async function loadMapData() {
 
             propertiLayer = L.geoJSON(propertiGeoJSON, {
                 pointToLayer: function (feature, latlng) {
-                    // PENTING: Memberikan ukuran iconSize agar marker bisa diklik dan popupAnchor agar posisi popup pas di atas marker
                     let iconProperti = L.divIcon({ 
-                        className: 'custom-div-wrapper', // Nama class pembungkus dikosongkan agar tidak bentrok
-                        html: '<div class="marker-properti"><i class="fas fa-store"></i></div>', 
-                        iconSize: [20, 20], 
-                        iconAnchor: [10, 10], 
-                        popupAnchor: [0, -10] 
+                        className: 'wrapper-marker-ku', // Class utama pembungkus Leaflet
+                        html: '<div class="bulatan-marker"><i class="fas fa-store"></i></div>', 
+                        iconSize: [24, 24], // Ukuran hitbox klik diperbesar jadi 24x24
+                        iconAnchor: [12, 12], // Titik jangkar di tengah (setengah dari 24)
+                        popupAnchor: [0, -12] // Posisi popup pas di atas marker
                     });
                     return L.marker(latlng, { icon: iconProperti });
                 },
