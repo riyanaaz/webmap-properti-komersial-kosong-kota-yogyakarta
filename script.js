@@ -46,24 +46,6 @@ let propertiLayer;
 let markerClusterGroup; // Variabel global untuk grup cluster
 let allMarkers = []; // array ini buat nampung semua titik biar gampang difilter nanti
 
-// Fungsi untuk mengubah ukuran icon saat di-zoom
-map.on('zoomend', function() {
-    var zoom = map.getZoom();
-    
-    // Rumus skala: Anggap zoom 14 adalah ukuran normal (scale 1)
-    var scale = 1 + ((zoom - 14) * 0.4); 
-    
-    // Batasi ukuran supaya tidak terlalu raksasa saat di-zoom maksimal, atau hilang saat zoom out
-    if (scale < 0.6) scale = 0.6; 
-    if (scale > 3.0) scale = 3.0; 
-    
-    // Kirim nilai skala ke CSS
-    document.documentElement.style.setProperty('--icon-scale', scale);
-});
-
-// Panggil fungsi sekali saat peta pertama dimuat agar ukurannya langsung menyesuaikan
-map.fire('zoomend');
-
 // ngerapiin nama field dari atribut geojson biar enak dibaca di popup
 const aliasField = {
     "awalkosong": "Bulan Kosong",
