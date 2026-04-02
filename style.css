@@ -138,12 +138,14 @@ body, html {
 /* =========================================
    DESAIN ICON PROPERTI (ANTI BUG KLIK)
 ========================================= */
-.wrapper-marker-ku {
-    background: transparent;
-    border: none;
+/* Wrapper luar dibiarkan polos agar Leaflet bisa menaruh koordinat dengan aman */
+.wrapper-marker-aman {
+    background: transparent !important;
+    border: none !important;
 }
 
-.bulatan-marker {
+/* Desain visual lingkaran merah ditaruh di dalam */
+.bulatan-merah-aman {
     width: 24px; 
     height: 24px;
     background-color: #ffffff; 
@@ -155,22 +157,21 @@ body, html {
     align-items: center;
     font-size: 11px; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
-    transition: all 0.2s ease;
-    
-    /* PENTING: Mencegah elemen ini memblokir klik, sehingga klik tembus ke wrapper Leaflet */
-    pointer-events: none; 
+    /* Transisinya hanya diterapkan pada bulatan ini */
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+    pointer-events: auto; 
 }
 
-/* Efek membesar saat marker disentuh kursor */
-.wrapper-marker-ku:hover .bulatan-marker { 
+/* Efek membesar ditaruh di bulatan dalam, sehingga tidak merusak koordinat Leaflet */
+.wrapper-marker-aman:hover .bulatan-merah-aman { 
     transform: scale(1.3);
     background-color: var(--primary-red); 
     color: #ffffff; 
     box-shadow: 0 4px 8px rgba(153, 0, 0, 0.4);
 }
 
-/* Memastikan marker yang sedang di-hover berada paling atas */
-.wrapper-marker-ku:hover {
+.wrapper-marker-aman:hover {
     z-index: 1000 !important;
 }
 
