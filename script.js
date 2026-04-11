@@ -134,8 +134,8 @@ async function loadMapData() {
                 popupHTML += '</table></div>';
                 
                 marker.bindPopup(popupHTML, {
-                    maxWidth: 450,      
-                    minWidth: 360,      
+                    maxWidth: 320,      
+                    minWidth: 260,      
                     autoPanPaddingTopLeft: [20, 140],
                     autoPanPaddingBottomRight: [20, 20]
                 });
