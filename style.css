@@ -285,8 +285,8 @@ body, html {
     .legend-icon-properti { width: 12px; height: 12px; font-size: 6px; }
     .btn-help { bottom: 25px; left: 10px; padding: 8px 12px; font-size: 12px; }
     
-    .popup-custom { width: 100%; min-width: 250px; }
-    .popup-img-container { height: 220px; }
+    .popup-custom { width: 100%; min-width: 240px; }
+    .popup-img-container { height: 180px; }
     .attribute-key, .attribute-value { font-size: 11px; }
     .leaflet-bottom.leaflet-left { margin-bottom: 70px; margin-left: 10px; }
 }
