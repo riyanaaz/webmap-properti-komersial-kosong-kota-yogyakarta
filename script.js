@@ -1,0 +1,512 @@
+// ==========================================
+// 1. FUNGSI MODAL PANDUAN & LIGHTBOX FOTO
+// ==========================================
+function closeModal() {
+    const modal = document.getElementById('guideModal');
+    modal.style.opacity = '0';
+    setTimeout(() => { modal.style.display = 'none'; modal.style.opacity = '1'; }, 300);
+}
+
+function openModal() {
+    document.getElementById('guideModal').style.display = 'flex';
+}
+
+function openLightbox(src) {
+    const overlay = document.getElementById('lightboxOverlay');
+    document.getElementById('lightboxImage').src = src;
+    overlay.classList.add('show-lightbox');
+}
+
+function closeLightbox() {
+    const overlay = document.getElementById('lightboxOverlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.classList.remove('show-lightbox'); overlay.style.opacity = ''; }, 300);
+}
+
+
+// ==========================================
+// 2. INISIALISASI PETA DASAR (BASEMAP)
+// ==========================================
+const map = L.map('map', { zoomControl: false, tap: false }).setView([-7.7956, 110.3695], 13);
+L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+// Menggunakan Google Maps Standard
+L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    maxZoom: 20, 
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    attribution: '© Google Maps | Riyana Ajizah - S1 Teknik Geodesi UGM'
+}).addTo(map);
+
+let markerCluster, allMarkers = [];
+
+
+// ==========================================
+// 3. FUNGSI BANTUAN (HELPER FUNCTIONS)
+// ==========================================
+
+// A. Fungsi ekstrak koordinat GeoJSON (Point, Polygon, dll)
+function extractCoordinates(geometry) {
+    if (!geometry || !geometry.coordinates) return null;
+    const coords = geometry.coordinates;
+    switch (geometry.type) {
+        case 'Point': return coords;
+        case 'MultiPoint': return coords[0];
+        case 'LineString': return coords[0];
+        case 'MultiLineString': return coords[0][0];
+        case 'Polygon': return coords[0][0];
+        case 'MultiPolygon': return coords[0][0][0];
+        default: return null;
+    }
+}
+
+// B. Fungsi konversi format tanggal angka jadi teks bahasa Indonesia
+function formatTanggalIndo(tanggalString) {
+    if (!tanggalString || tanggalString === '-') return '-';
+
+    let dateObj = new Date(tanggalString);
+
+    // Cek jika formatnya DD-MM-YYYY atau DD/MM/YYYY
+    if (isNaN(dateObj.getTime())) {
+        const parts = tanggalString.split(/[-/]/);
+        if (parts.length === 3) {
+            if (parts[2].length === 4) { // Tahun ada di belakang
+                dateObj = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+        }
+    }
+
+    if (isNaN(dateObj.getTime())) return tanggalString; // Jika gagal, kembalikan teks asli
+
+    const namaBulan = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    const tanggal = dateObj.getDate();
+    const bulan = namaBulan[dateObj.getMonth()];
+    const tahun = dateObj.getFullYear();
+
+    return `${tanggal} ${bulan} ${tahun}`;
+}
+
+// C. Fungsi ubah teks huruf besar semua (ALL CAPS) jadi Title Case
+function toTitleCase(str) {
+    if (typeof str !== 'string' || str === '-') return str;
+    return str.toLowerCase().split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+}
+
+// Fungsi untuk membersihkan teks (Normalisasi) agar pencarian lebih fleksibel
+function normalizeString(str) {
+    if (!str) return "";
+    return str.toLowerCase()
+        .replace(/\b(jalan|jl|jln|gang|gg)\b\.?/g, "") // Hilangkan Jalan, Jl., Gang, dsb.
+        .replace(/[^\w\s]/g, "")                     // Hilangkan tanda baca
+        .replace(/\s+/g, " ")                        // Ubah spasi ganda jadi spasi tunggal
+        .trim();                                     // Buang spasi di awal/akhir
+}
+
+// ==========================================
+// 4. PEMUATAN DATA SPASIAL & MARKER
+// ==========================================
+async function loadMapData() {
+    try {
+        // --- Memuat Batas Administrasi ---
+        const batasRes = await fetch('data/batas.geojson');
+        if (batasRes.ok) {
+            const batasGeo = await batasRes.json();
+            // Layer outline putih (glow)
+            L.geoJSON(batasGeo, { style: { color: '#FFFFFF', weight: 6 } }).addTo(map);
+            // Layer outline hitam putus-putus
+            L.geoJSON(batasGeo, { style: { color: '#000000', weight: 3, dashArray: '15, 6, 2, 6, 2, 6' } }).addTo(map);
+        }
+
+        // --- Memuat Data Properti ---
+        const propRes = await fetch('data/properti.geojson');
+        if (!propRes.ok) throw new Error('properti.geojson tidak ditemukan');
+        const propGeo = await propRes.json();
+        console.log('GeoJSON loaded:', propGeo);
+
+        if (!propGeo.features || !Array.isArray(propGeo.features)) {
+            throw new Error('GeoJSON tidak memiliki features');
+        }
+
+        // --- Inisialisasi Marker Cluster ---
+        markerCluster = L.markerClusterGroup({
+            disableClusteringAtZoom: 18,
+            spiderfyOnMaxZoom: true,
+            zoomToBoundsOnClick: true,
+            showCoverageOnHover: false
+        });
+
+        let successCount = 0;
+
+        propGeo.features.forEach((feature, idx) => {
+            try {
+                // Ekstraksi Koordinat
+                const coordsArray = extractCoordinates(feature.geometry);
+                if (!coordsArray || coordsArray.length < 2) {
+                    console.warn(`Fitur ${idx}: tidak bisa ekstrak koordinat`, feature.geometry);
+                    return;
+                }
+
+                let lng = coordsArray[0];
+                let lat = coordsArray[1];
+                if (isNaN(lat) || isNaN(lng)) return; // Lewati jika koordinat error
+                
+                const latlng = L.latLng(lat, lng);
+                const props = feature.properties || {};
+                
+                // Variabel untuk fitur pencarian
+                const namaJalan = props.nama_jalan || '-';
+                const jenisProperti = props.jenis_properti || '-';
+                const foto = props.foto || props.FOTO || null;
+
+                // Desain Icon Marker Custom
+                const icon = L.divIcon({
+                    className: 'marker-ico',
+                    html: '<div class="marker-bulet"><i class="fas fa-store"></i></div>',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 17],
+                    popupAnchor: [0, -17]
+                });
+                
+                const marker = L.marker(latlng, { icon: icon });
+
+                // --- KONFIGURASI POP-UP ---
+                let popupHTML = '<div class="popup-custom">';
+                
+                // Jika ada foto, tambahkan ke pop-up
+                if (foto) {
+                    popupHTML += `<div class="popup-img-container"><img src="foto/${foto}" class="popup-img" onclick="openLightbox(this.src)" onerror="this.style.display='none'"></div>`;
+                }
+                
+                // Urutan Atribut (Makro -> Mikro)
+                const orderedFields = [
+                    { key: 'id', label: 'ID' },
+                    { key: 'wadmkc', label: 'Kemantren' },
+                    { key: 'wadmkd', label: 'Kelurahan' },
+                    { key: 'nama_jalan', label: 'Nama Jalan' },
+                    { key: 'jenis_jalan', label: 'Jenis Jalan' },
+                    { key: 'tipologi_lokasi', label: 'Tipologi Lokasi' },
+                    { key: 'lingkungan_sekitar', label: 'Lingkungan Sekitar' },
+                    { key: 'jenis_properti', label: 'Jenis Properti' },
+                    { key: 'fungsi_awal_properti', label: 'Fungsi Awal Properti' },
+                    { key: 'bulan_kosong', label: 'Bulan Awal Kosong' },
+                    { key: 'tahun_kosong', label: 'Tahun Awal Kosong' },
+                    { key: 'tanggal_pendataan', label: 'Tanggal Pendataan' }
+                ];
+
+                popupHTML += '<table class="popup-table">';
+                
+                orderedFields.forEach(field => {
+                    let value = (props[field.key] !== undefined && props[field.key] !== null && props[field.key] !== '') ? props[field.key] : '-';
+                    
+                    // Eksekusi fungsi helper untuk format data
+                    if (value !== '-') {
+                        if (field.key === 'tanggal_pendataan') {
+                            value = formatTanggalIndo(value); // Ubah format tanggal
+                        } else if (field.key === 'wadmkc' || field.key === 'wadmkd') {
+                            value = toTitleCase(value); // Ubah jadi Title Case
+                        }
+
+                        // Buat baris tabel pop-up
+                        popupHTML += `<tr style="border-bottom:1px solid #eee;">
+                                        <td class="attribute-key">${field.label}</td>
+                                        <td class="attribute-separator">:</td>
+                                        <td class="attribute-value">${value}</td>
+                                      </tr>`;
+                    }
+                });
+                
+                popupHTML += '</table></div>';
+                
+                // Sematkan pop-up ke marker
+                marker.bindPopup(popupHTML, {
+                    maxWidth: 320,      
+                    minWidth: 260,      
+                    autoPanPaddingTopLeft: [20, 140],
+                    autoPanPaddingBottomRight: [20, 20]
+                });
+                
+                // Event buka pop-up saat diklik
+                marker.on('click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    this.openPopup();
+                });
+
+                // Simpan data untuk kebutuhan fitur Search Panel
+                marker.featureData = {
+                    jalanAsli: namaJalan,
+                    jenisAsli: jenisProperti,
+                    jalan: namaJalan.toLowerCase(),
+                    jenis: jenisProperti.toLowerCase(),
+                    titik: latlng
+                };
+                
+                allMarkers.push(marker);
+                successCount++;
+
+            } catch (err) {
+                console.error(`Error memproses fitur ke-${idx}:`, err);
+            }
+        });
+
+        console.log(`Berhasil memproses ${successCount} titik properti dari ${propGeo.features.length} fitur data`);
+        
+        if (successCount === 0) {
+            alert('Tidak ada titik data properti yang valid untuk ditampilkan. Cek struktur geometry di file properti.geojson');
+            return;
+        }
+
+        // Tampilkan angka total ke modal awal
+        const elementTotal = document.getElementById('teksTotalProperti');
+        if (elementTotal) {
+            elementTotal.innerText = successCount;
+        }
+
+        // Masukkan semua marker ke dalam Cluster lalu ke Peta
+        markerCluster.addLayers(allMarkers);
+        map.addLayer(markerCluster);
+        
+        // Paskan tampilan peta agar memuat semua titik
+        if (markerCluster.getBounds().isValid()) {
+            map.fitBounds(markerCluster.getBounds());
+        }
+
+        // Inisialisasi Search Panel
+        setupDropdowns();
+
+    } catch (err) {
+        console.error('Error loadMapData:', err);
+        alert('Terjadi kesalahan saat memuat data: ' + err.message);
+    }
+}
+
+
+// ==========================================
+// 5. FUNGSI PENCARIAN & FILTER PETA
+// ==========================================
+function setupDropdowns() {
+    const inputJalan = document.getElementById('searchJalan');
+    const inputJenis = document.getElementById('searchJenis');
+    const dropdownJalan = document.getElementById('dropdownJalan');
+    const dropdownJenis = document.getElementById('dropdownJenis');
+    const clearJalan = document.getElementById('clearJalan');
+    const clearJenis = document.getElementById('clearJenis');
+
+    // Tampilkan/Sembunyikan tombol 'X' penghapus pencarian
+    function updateClearButtons() {
+        if (clearJalan) clearJalan.style.display = inputJalan.value.trim() !== '' ? 'flex' : 'none';
+        if (clearJenis) clearJenis.style.display = inputJenis.value.trim() !== '' ? 'flex' : 'none';
+    }
+
+    // Fungsi bantu untuk membersihkan teks pencarian (menghapus "jl", "jalan", tanda baca, dll)
+    function sanitizeSearchText(text) {
+        if (!text) return '';
+        return text.toLowerCase()
+            .replace(/\b(jl\.|jln\.|jl|jln|jalan)\b/g, '') // Hapus variasi kata "jalan"
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '') // Hapus tanda baca
+            .trim()
+            .replace(/\s{2,}/g, ' '); // Ganti spasi ganda dengan spasi tunggal
+    }
+
+    // Dropdown Nama Jalan
+    function renderJalan(filter = '') {
+        const filterJenis = sanitizeSearchText(inputJenis.value);
+        const searchQuery = sanitizeSearchText(filter);
+        let items = new Set();
+        
+        allMarkers.forEach(m => {
+            const dataJalan = sanitizeSearchText(m.featureData.jalanAsli);
+            const dataJenis = sanitizeSearchText(m.featureData.jenisAsli);
+            
+            // Cek apakah jenis properti sesuai (jika ada filter jenis)
+            if (!filterJenis || dataJenis.includes(filterJenis)) {
+                items.add(m.featureData.jalanAsli); // Simpan nama aslinya untuk ditampilkan
+            }
+        });
+        
+        // Filter nama jalan berdasarkan query pencarian (yang sudah dibersihkan)
+        const arr = Array.from(items).sort().filter(jalanAsli => {
+            const jalanBersih = sanitizeSearchText(jalanAsli);
+            return jalanBersih.includes(searchQuery);
+        });
+
+        dropdownJalan.innerHTML = '';
+        
+        if (arr.length === 0) {
+            // Tampilkan pesan jika data tidak ditemukan
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.style.color = '#888';
+            div.style.fontStyle = 'italic';
+            div.style.cursor = 'default';
+            div.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #ccc;"></i> <span class="dropdown-text">Data tidak tersedia atau tidak ada properti kosong.</span>`;
+            dropdownJalan.appendChild(div);
+            dropdownJalan.style.display = 'flex';
+            return;
+        }
+        
+        arr.forEach(jalan => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.innerHTML = `<i class="fas fa-road"></i> <span class="dropdown-text">${jalan}</span>`;
+            div.addEventListener('click', () => {
+                inputJalan.value = jalan;
+                dropdownJalan.style.display = 'none';
+                filterMap();
+                updateClearButtons();
+            });
+            dropdownJalan.appendChild(div);
+        });
+        dropdownJalan.style.display = 'flex';
+    }
+
+    // Dropdown Jenis Properti
+    function renderJenis(filter = '') {
+        const filterJalan = sanitizeSearchText(inputJalan.value);
+        const searchQuery = sanitizeSearchText(filter);
+        let items = new Set();
+        
+        allMarkers.forEach(m => {
+            const dataJalan = sanitizeSearchText(m.featureData.jalanAsli);
+            const dataJenis = sanitizeSearchText(m.featureData.jenisAsli);
+            
+            // Cek apakah nama jalan sesuai (jika ada filter jalan)
+            if (!filterJalan || dataJalan.includes(filterJalan)) {
+                items.add(m.featureData.jenisAsli); // Simpan nama aslinya untuk ditampilkan
+            }
+        });
+        
+        // Filter jenis properti berdasarkan query pencarian (yang sudah dibersihkan)
+        const arr = Array.from(items).sort().filter(jenisAsli => {
+            const jenisBersih = sanitizeSearchText(jenisAsli);
+            return jenisBersih.includes(searchQuery);
+        });
+
+        dropdownJenis.innerHTML = '';
+        
+        if (arr.length === 0) {
+             // Tampilkan pesan jika data tidak ditemukan
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.style.color = '#888';
+            div.style.fontStyle = 'italic';
+            div.style.cursor = 'default';
+            div.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #ccc;"></i> <span class="dropdown-text">Data tidak tersedia.</span>`;
+            dropdownJenis.appendChild(div);
+            dropdownJenis.style.display = 'flex';
+            return;
+        }
+        
+        arr.forEach(jenis => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.innerHTML = `<i class="fas fa-tag"></i> <span class="dropdown-text">${jenis}</span>`;
+            div.addEventListener('click', () => {
+                inputJenis.value = jenis;
+                dropdownJenis.style.display = 'none';
+                filterMap();
+                updateClearButtons();
+            });
+            dropdownJenis.appendChild(div);
+        });
+        dropdownJenis.style.display = 'flex';
+    }
+
+    // Fungsi utama mengeksekusi filter marker di peta
+    function filterMap() {
+        const qJalan = sanitizeSearchText(inputJalan.value);
+        const qJenis = sanitizeSearchText(inputJenis.value);
+        
+        const matched = allMarkers.filter(m => {
+            const dataJalan = sanitizeSearchText(m.featureData.jalanAsli);
+            const dataJenis = sanitizeSearchText(m.featureData.jenisAsli);
+            return (qJalan === '' || dataJalan.includes(qJalan)) &&
+                   (qJenis === '' || dataJenis.includes(qJenis));
+        });
+        
+        markerCluster.clearLayers();
+        markerCluster.addLayers(matched);
+        
+        if (matched.length) {
+            const bounds = L.latLngBounds(matched.map(m => m.featureData.titik));
+            if (bounds.isValid()) map.fitBounds(bounds, { padding: [50,50], maxZoom: 17 });
+        } else if (!qJalan && !qJenis && allMarkers.length) {
+            if (markerCluster.getBounds().isValid()) map.fitBounds(markerCluster.getBounds());
+        }
+    }
+
+    // Event Listener Input Pencarian (saat mengetik dan saat kolom diklik)
+    inputJalan.addEventListener('input', () => { renderJalan(inputJalan.value); filterMap(); updateClearButtons(); });
+    inputJalan.addEventListener('click', () => { renderJalan(inputJalan.value); });
+    
+    inputJenis.addEventListener('input', () => { renderJenis(inputJenis.value); filterMap(); updateClearButtons(); });
+    inputJenis.addEventListener('click', () => { renderJenis(inputJenis.value); });
+
+    // TRIK BARU: Deteksi klik di luar kotak pencarian untuk menutup dropdown
+    document.addEventListener('click', (e) => {
+        // Cek apakah klik terjadi di LUAR area search jalan
+        if (!inputJalan.closest('.search-box').contains(e.target)) {
+            dropdownJalan.style.display = 'none';
+        }
+        // Cek apakah klik terjadi di LUAR area search jenis
+        if (!inputJenis.closest('.search-box').contains(e.target)) {
+            dropdownJenis.style.display = 'none';
+        }
+    });
+
+    // Event Listener Tombol Silang (Clear)
+    if (clearJalan) {
+        clearJalan.addEventListener('click', () => {
+            inputJalan.value = ''; 
+            renderJalan(''); // Tampilkan ulang semua daftar
+            filterMap(); 
+            updateClearButtons(); 
+            inputJalan.focus(); // Tahan kursor tetap di dalam
+        });
+    }
+    
+    if (clearJenis) {
+        clearJenis.addEventListener('click', () => {
+            inputJenis.value = ''; 
+            renderJenis(''); // Tampilkan ulang semua daftar
+            filterMap(); 
+            updateClearButtons(); 
+            inputJenis.focus(); // Tahan kursor tetap di dalam
+        });
+    }
+
+    updateClearButtons();
+}
+
+// ==========================================
+// 6. LEGENDA PETA
+// ==========================================
+const legend = L.control({ position: 'bottomright' });
+legend.onAdd = () => {
+    const div = L.DomUtil.create('div', 'info legend');
+    div.innerHTML = `
+        <h4>Legenda</h4>
+        <div class="legend-item">
+            <div class="legend-icon-properti"><i class="fas fa-store"></i></div>
+            <span>Properti Komersial Kosong</span>
+        </div>
+        <div class="legend-item">
+            <svg width="40" height="14" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px; flex-shrink: 0;">
+                <line x1="0" y1="7" x2="40" y2="7" stroke="#FFFFFF" stroke-width="6" />
+                <line x1="0" y1="7" x2="40" y2="7" stroke="#000000" stroke-width="3" stroke-dasharray="8, 4, 2, 4, 2, 4" stroke-linecap="round" />
+            </svg>
+            <span>Batas Administrasi Kota Yogyakarta</span>
+        </div>`;
+    return div;
+};
+legend.addTo(map);
+
+
+// ==========================================
+// 7. JALANKAN PROGRAM
+// ==========================================
+loadMapData();
