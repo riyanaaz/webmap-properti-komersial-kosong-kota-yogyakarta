@@ -225,14 +225,22 @@ async function loadMapData() {
                 // Sematkan pop-up ke marker
                 marker.bindPopup(popupHTML, {
                     maxWidth: 320,      
-                    minWidth: 260,      
-                    autoPanPaddingTopLeft: [20, 140],
+                    minWidth: 260, 
+                    autoPan: true, // Pastikan ini true
+                    autoPanPaddingTopLeft: [20, 160],
                     autoPanPaddingBottomRight: [20, 20]
+                    keepInView: true // Memastikan pop-up tetap di dalam layar jika peta digeser manual
                 });
                 
                 // Event buka pop-up saat diklik
                 marker.on('click', function(e) {
                     L.DomEvent.stopPropagation(e);
+                    const latlng = e.target.getLatLng();
+                    const isMobile = window.innerWidth <= 768;
+                    const offset = isMobile ? 0.004 : 0.002;
+                    map.panTo([latlng.lat + offset, latlng.lng], {
+                        animate: true
+                    });
                     this.openPopup();
                 });
 
