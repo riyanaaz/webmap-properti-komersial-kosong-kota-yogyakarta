@@ -159,8 +159,8 @@ async function loadMapData() {
                 const props = feature.properties || {};
                 
                 // Variabel untuk fitur pencarian
-                const namaJalan = props.nama_jalan || '-';
-                const jenisProperti = props.jenis_properti || '-';
+                const namaJalan = props.nama_jln || '-';
+                const jenisProperti = props.jenis_pro || '-';
                 const foto = props.foto || props.FOTO || null;
 
                 // Desain Icon Marker Custom
@@ -187,15 +187,15 @@ async function loadMapData() {
                     { key: 'id', label: 'ID' },
                     { key: 'wadmkc', label: 'Kemantren' },
                     { key: 'wadmkd', label: 'Kelurahan' },
-                    { key: 'nama_jalan', label: 'Nama Jalan' },
-                    { key: 'jenis_jalan', label: 'Jenis Jalan' },
-                    { key: 'tipologi_lokasi', label: 'Tipologi Lokasi' },
-                    { key: 'lingkungan_sekitar', label: 'Lingkungan Sekitar' },
-                    { key: 'jenis_properti', label: 'Jenis Properti' },
-                    { key: 'fungsi_awal_properti', label: 'Fungsi Awal Properti' },
-                    { key: 'bulan_kosong', label: 'Bulan Awal Kosong' },
-                    { key: 'tahun_kosong', label: 'Tahun Awal Kosong' },
-                    { key: 'tanggal_pendataan', label: 'Tanggal Pendataan' }
+                    { key: 'nama_jln', label: 'Nama Jalan' },
+                    { key: 'jenis_jln', label: 'Jenis Jalan' },
+                    { key: 'tipo_lok', label: 'Tipologi Lokasi' },
+                    { key: 'ling_sek', label: 'Lingkungan Sekitar' },
+                    { key: 'jenis_pro', label: 'Jenis Properti' },
+                    { key: 'fungsi_pro', label: 'Fungsi Awal Properti' },
+                    { key: 'bulan_kos', label: 'Bulan Awal Kosong' },
+                    { key: 'tahun_kos', label: 'Tahun Awal Kosong' },
+                    { key: 'tanggal', label: 'Tanggal Pendataan' }
                 ];
 
                 popupHTML += '<table class="popup-table">';
@@ -205,7 +205,7 @@ async function loadMapData() {
                     
                     // Eksekusi fungsi helper untuk format data
                     if (value !== '-') {
-                        if (field.key === 'tanggal_pendataan') {
+                        if (field.key === 'tanggal') {
                             value = formatTanggalIndo(value); // Ubah format tanggal
                         } else if (field.key === 'wadmkc' || field.key === 'wadmkd') {
                             value = toTitleCase(value); // Ubah jadi Title Case
