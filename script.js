@@ -190,7 +190,6 @@ async function loadMapData() {
                     { key: 'nama_jln', label: 'Nama Jalan' },
                     { key: 'jenis_jln', label: 'Jenis Jalan' },
                     { key: 'tipo_lok', label: 'Tipologi Lokasi' },
-                    { key: 'ling_sek', label: 'Lingkungan Sekitar' },
                     { key: 'jenis_pro', label: 'Jenis Properti' },
                     { key: 'fungsi_pro', label: 'Fungsi Awal Properti' },
                     { key: 'bulan_kos', label: 'Bulan Awal Kosong' },
