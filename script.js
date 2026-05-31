@@ -40,7 +40,7 @@ const googleMaps = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z=
 // 2.2. Definisikan Layer OpenStreetMap (OSM)
 const osmMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, 
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Riyana Ajizah - S1 Teknik Geodesi UGM'
+    attribution: '© OpenStreetMap | Riyana Ajizah - S1 Teknik Geodesi UGM'
 });
 
 // 2.3. Tentukan Base Map Default (yang tampil pertama kali saat web dibuka)
